@@ -17,23 +17,26 @@ It doesn't just spew random developer jokes—it reads your actual local reposit
 ## 📸 Terminal Preview
 
 ```text
-┌──────────────────────── ⚡ GIT-EXCUSE ENGINE v2.0 ────────────────────────┐
-│ [ RAM: 91% ] [ Branch: feat/auth-tokens ] [ Diff: +412/-18 ] [ Lockfile: OK ] │
-│ ⚠ AST Alerts: TYPE_SOUNDNESS_BYPASS (x3), SILENT_EXCEPTION_SINK (x1)         │
-│ ────────────────────────────────────────────────────────────────────────── │
-│ STANDUP BRIEFING:                                                          │
-│ "From an architectural boundary perspective, we are currently decoupling   │
-│  transient asynchronous fault-propagation vectors to prevent cascading    │
-│  micro-outages across consumer modules. We must ensure zero downstream     │
-│  regressions before committing to this paradigm."                          │
-│                                                                            │
-│ FORENSIC TRUTH: You wrote catch (err) {} with nothing inside, completely   │
-│ burying runtime crashes.                                                   │
-│                                                                            │
-│ ACTIONABLE REMEDY: Add structured logger telemetry or rethrow caught       │
-│ exceptions.                                                                │
-└────────────────────────────────────────────────────────────────────────────┘
-  ⚡ Standup briefing copied to clipboard. Ready to paste.
+  ⠋ Parsing Babel AST across staged diffs...
+
+  ◆ git-excuse v2.0
+  ──────────────────────────────────────────────────────
+  branch: main  •  diff: +142/-4  •  memory: 64%  •  lockfile: synced
+  ▲  detected smells: TYPE_SOUNDNESS_BYPASS
+
+  STANDUP
+  "From an architectural boundary perspective, we are deferring static
+  contract verification at the interface boundary to facilitate
+  polymorphic payload elasticity. We must ensure zero downstream
+  regressions before committing to this paradigm."
+
+  REALITY
+  You bypassed TypeScript compilation errors with `any` instead of typing the object.
+
+  REMEDY
+  Define explicit interfaces or use `unknown` with runtime typeguards.
+  ──────────────────────────────────────────────────────
+  ✓ Copied standup to clipboard.
 ```
 
 ---
