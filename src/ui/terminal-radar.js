@@ -1,48 +1,38 @@
-import boxen from 'boxen';
 import chalk from 'chalk';
 
 export function renderTerminalRadar(forensics, ast, telemetry, drift, excuseData) {
-    const divider = chalk.dim('─'.repeat(58));
+    const dim = chalk.dim;
+    const cyan = chalk.cyan;
+    const gray = chalk.gray;
 
-    // Build telemetry radar line
-    const memBadge = telemetry.memUsagePercent > 80
-        ? chalk.bgRed.black(` RAM: ${telemetry.memUsagePercent}% `)
-        : chalk.bgCyan.black(` RAM: ${telemetry.memUsagePercent}% `);
+    // Format inline key-value tags
+    const tags = [
+        `${dim('branch:')} ${cyan(forensics.branch || 'detached')}`,
+        `${dim('diff:')} ${chalk.green('+' + forensics.linesAdded)}${dim('/')}${chalk.red('-' + forensics.linesDeleted)}`,
+        `${dim('memory:')} ${telemetry.memUsagePercent > 80 ? chalk.yellow(telemetry.memUsagePercent + '%') : chalk.white(telemetry.memUsagePercent + '%')}`,
+        `${dim('lockfile:')} ${drift.hasDrift ? chalk.yellow('drifted') : chalk.green('synced')}`
+    ].join(dim('  •  '));
 
-    const gitBadge = chalk.bgBlue.black(` Branch: ${forensics.branch || 'detached'} `);
-    const diffBadge = chalk.bgGray.white(` Diff: +${forensics.linesAdded}/-${forensics.linesDeleted} `);
-    const driftBadge = drift.hasDrift
-        ? chalk.bgYellow.black(' Lockfile: DRIFT ')
-        : chalk.bgGreen.black(' Lockfile: OK ');
-
-    const telemetryHeader = `${memBadge} ${gitBadge} ${diffBadge} ${driftBadge}`;
-
-    // AST Smells Line
-    let smellsLine = chalk.green('✓ AST Diff Clean: No critical smells detected.');
+    // Format AST summary line
+    let alertLine = '';
     if (ast.smells.length > 0) {
-        const list = Object.entries(ast.smellCounts)
-            .map(([k, v]) => `${k} (x${v})`)
-            .join(', ');
-        smellsLine = chalk.red(`⚠ AST Alerts: ${list}`);
+        const smellKeys = Object.keys(ast.smellCounts).join(', ');
+        alertLine = `\n  ${chalk.yellow('▲')}  ${dim('detected smells:')} ${chalk.yellow(smellKeys)}`;
     }
 
-    const body = [
-        telemetryHeader,
-        smellsLine,
-        divider,
-        chalk.bold.yellow('STANDUP BRIEFING:'),
-        chalk.white.italic(`"${excuseData.standup}"`),
-        '',
-        `${chalk.bold.red('FORENSIC TRUTH:')} ${chalk.gray(excuseData.reality)}`,
-        `${chalk.bold.cyan('ACTIONABLE REMEDY:')} ${chalk.white(excuseData.remediation)}`
-    ].join('\n');
+    return `
+  ${chalk.bold.magenta('◆ git-excuse')} ${dim('v2.0')}
+  ${dim('─'.repeat(54))}
+  ${tags}${alertLine}
 
-    return boxen(body, {
-        padding: 1,
-        margin: 1,
-        borderColor: excuseData.severity === 'Critical' ? 'red' : 'magenta',
-        borderStyle: 'double',
-        title: chalk.bold.cyan(' ⚡ GIT-EXCUSE ENGINE v2.0 '),
-        titleAlignment: 'center'
-    });
+  ${chalk.bold.white('STANDUP')}
+  ${chalk.italic.cyan(`"${excuseData.standup}"`)}
+
+  ${chalk.bold.red('REALITY')}
+  ${gray(excuseData.reality)}
+
+  ${chalk.bold.green('REMEDY')}
+  ${chalk.white(excuseData.remediation)}
+  ${dim('─'.repeat(54))}
+`;
 }
