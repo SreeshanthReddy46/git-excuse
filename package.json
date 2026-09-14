@@ -1,6 +1,6 @@
 {
   "name": "git-excuse",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Enterprise-grade AST forensics, git telemetry, and contextual standup excuse generator.",
   "type": "module",
   "main": "src/index.js",
