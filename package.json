@@ -1,0 +1,36 @@
+{
+  "name": "git-excuse",
+  "version": "2.0.0",
+  "description": "Enterprise-grade AST forensics, git telemetry, and contextual standup excuse generator.",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "git-excuse": "bin/cli.js"
+  },
+  "scripts": {
+    "start": "node bin/cli.js",
+    "lint": "eslint src/ bin/"
+  },
+  "keywords": [
+    "git",
+    "cli",
+    "ast",
+    "developer-tools",
+    "telemetry",
+    "standup",
+    "humor"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/parser": "^7.26.0",
+    "@babel/traverse": "^7.26.0",
+    "boxen": "^7.1.1",
+    "chalk": "^5.3.0",
+    "clipboardy": "^4.0.0",
+    "commander": "^12.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
