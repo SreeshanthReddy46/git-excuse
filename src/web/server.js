@@ -12,7 +12,6 @@ export function startDashboard(reportData, port = 4321) {
         const url = `http://localhost:${port}`;
         console.log(`\n  ⚡ Local Radar Dashboard active at: ${url}`);
 
-        // Auto-open browser across OS
         const openCmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
         exec(`${openCmd} ${url}`, { stdio: 'ignore' });
     });
