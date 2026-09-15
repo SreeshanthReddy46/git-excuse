@@ -3,52 +3,23 @@ import path from 'node:path';
 
 export function detectLockfileDrift() {
     const cwd = process.cwd();
-    const pkgPath = path.join(cwd, 'package.json');
-    const npmLockPath = path.join(cwd, 'package-lock.json');
-    const yarnLockPath = path.join(cwd, 'yarn.lock');
-    const pnpmLockPath = path.join(cwd, 'pnpm-lock.yaml');
+    const pkg = path.join(cwd, 'package.json');
+    const locks = [
+        { type: 'pnpm', path: path.join(cwd, 'pnpm-lock.yaml') },
+        { type: 'yarn', path: path.join(cwd, 'yarn.lock') },
+        { type: 'npm', path: path.join(cwd, 'package-lock.json') }
+    ];
 
-    if (!fs.existsSync(pkgPath)) {
-        return { hasDrift: false, exists: false };
-    }
+    if (!fs.existsSync(pkg)) return { hasDrift: false };
 
-    let lockType = null;
-    let lockPath = null;
+    const activeLock = locks.find((l) => fs.existsSync(l.path));
+    if (!activeLock) return { hasDrift: true, reason: 'NO_LOCKFILE' };
 
-    if (fs.existsSync(pnpmLockPath)) {
-        lockType = 'pnpm';
-        lockPath = pnpmLockPath;
-    } else if (fs.existsSync(yarnLockPath)) {
-        lockType = 'yarn';
-        lockPath = yarnLockPath;
-    } else if (fs.existsSync(npmLockPath)) {
-        lockType = 'npm';
-        lockPath = npmLockPath;
-    }
-
-    if (!lockPath) {
-        return {
-            hasDrift: true,
-            exists: true,
-            reason: 'MISSING_LOCKFILE',
-            detail: 'No lockfile present. Dependency resolution is non-deterministic.'
-        };
-    }
-
-    const pkgStat = fs.statSync(pkgPath);
-    const lockStat = fs.statSync(lockPath);
-
-    // If package.json was modified after the lockfile by more than 5 seconds
-    const isDrifting = pkgStat.mtimeMs - lockStat.mtimeMs > 5000;
+    const pkgTime = fs.statSync(pkg).mtimeMs;
+    const lockTime = fs.statSync(activeLock.path).mtimeMs;
 
     return {
-        hasDrift: isDrifting,
-        exists: true,
-        lockType,
-        timeDeltaSec: Math.round(Math.abs(pkgStat.mtimeMs - lockStat.mtimeMs) / 1000),
-        reason: isDrifting ? 'UNSYNCHRONIZED_LOCKFILE' : 'ALIGNED',
-        detail: isDrifting
-            ? `package.json is newer than ${path.basename(lockPath)}. Lockfile was not refreshed.`
-            : 'Lockfile and manifest timestamps are aligned.'
+        hasDrift: pkgTime - lockTime > 4000,
+        lockType: activeLock.type
     };
 }

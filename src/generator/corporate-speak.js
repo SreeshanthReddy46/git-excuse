@@ -1,83 +1,83 @@
 import { PERSONAS } from './personas.js';
 
+const VERBS = ['decoupling', 'reconciling', 'stabilizing', 'isolating', 'refactoring', 'orchestrating'];
+const ADJECTIVES = ['transient', 'non-deterministic', 'covariant', 'asynchronous', 'distributed'];
+const NOUNS = ['boundary invariants', 'event pipelines', 'subtyping topologies', 'state machines'];
+
+function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
 export function synthesizeCorporateExcuse(forensics, ast, telemetry, drift, personaName = 'architect') {
     const persona = PERSONAS[personaName] || PERSONAS.architect;
+    const targetId = ast.identifiers[0] ? `\`${ast.identifiers[0]}\`` : 'the subsystem';
+    const targetFile = forensics.changedFiles[0] ? `in \`${forensics.changedFiles[0]}\`` : 'locally';
 
-    // Rule 1: Lockfile Drift
-    if (drift.hasDrift) {
-        return {
-            standup: `${persona.prefix} our build pipeline is experiencing non-deterministic transitive dependency resolution across the local lockfile boundary. ${persona.closing}`,
-            reality: `package.json was edited without running install. Lockfile is out of sync.`,
-            severity: "High",
-            remediation: "Execute `npm install` or `pnpm install` to synchronize your lockfile."
-        };
-    }
-
-    // Rule 2: Swallowed Exceptions (Empty Catch)
-    if (ast.smellCounts['SILENT_EXCEPTION_SINK']) {
-        return {
-            standup: `${persona.prefix} we have isolated an asynchronous fault-propagation vector that is intentionally sinking exceptions to prevent cascading micro-outages. ${persona.closing}`,
-            reality: "You wrote `catch (err) {}` with nothing inside, completely burying runtime crashes.",
-            severity: "Critical",
-            remediation: "Add structured logger telemetry or rethrow caught exceptions."
-        };
-    }
-
-    // Rule 3: TypeScript Any Escape
-    if (ast.smellCounts['TYPE_SOUNDNESS_BYPASS']) {
-        return {
-            standup: `${persona.prefix} we are deferring static contract verification at the interface boundary to facilitate polymorphic payload elasticity. ${persona.closing}`,
-            reality: "You bypassed TypeScript compilation errors with `any` instead of typing the object.",
-            severity: "High",
-            remediation: "Define explicit interfaces or use `unknown` with runtime typeguards."
-        };
-    }
-
-    // Rule 4: System Overload
-    if (telemetry.isMemoryChoked || telemetry.isCpuSaturated) {
-        return {
-            standup: `${persona.prefix} local computation throughput is degraded due to excessive memory bus contention (${telemetry.memUsagePercent}% utilization across ${telemetry.cpuCoreCount} execution units). ${persona.closing}`,
-            reality: "Your laptop is running out of memory. Node, Docker, and IDE workers are choking the OS.",
-            severity: "Medium",
-            remediation: "Kill orphaned node processes and run `docker system prune`."
-        };
-    }
-
-    // Rule 5: Friday Afternoon Safety Interceptor
-    if (telemetry.isFridayAfternoon) {
-        return {
-            standup: `${persona.prefix} our deployment cadence is respecting the risk-mitigation protocol governing late-cycle weekend invariant stability. ${persona.closing}`,
-            reality: "It is Friday afternoon. Deploying now is a direct invitation for an on-call emergency.",
-            severity: "Low",
-            remediation: "Step away from production. Resume deployment on Monday morning."
-        };
-    }
-
-    // Rule 6: Merge Conflicts
+    // 1. Conflict Invariant
     if (forensics.hasConflicts) {
         return {
             standup: `${persona.prefix} branch '${forensics.branch}' has encountered high-dimensional tree divergence during upstream trunk synchronization. ${persona.closing}`,
-            reality: `You have unresolved merge conflicts across ${forensics.conflictFiles.length} file(s).`,
-            severity: "Critical",
-            remediation: `Inspect conflicts with: git status --short | grep '^UU'`
+            reality: `You have active merge conflicts across ${forensics.conflictFiles.length} file(s).`,
+            remediation: 'git rebase --abort || git status --short | grep "^UU"'
         };
     }
 
-    // Rule 7: Excessive Uncommitted Churn (>250 lines with 0 tests)
-    if (forensics.linesAdded > 250 && forensics.linesDeleted < 20) {
+    // 2. Lockfile Drift
+    if (drift.hasDrift) {
         return {
-            standup: `${persona.prefix} we are completing the structural scaffolding layer before instrumenting end-to-end regression fixtures. ${persona.closing}`,
-            reality: `You wrote ${forensics.linesAdded} lines of code without a single test or atomic commit.`,
-            severity: "Medium",
-            remediation: "Stage smaller logical hunks (`git add -p`) and draft unit tests."
+            standup: `${persona.prefix} local dependency resolution is exhibiting non-deterministic behavior against our locked topology. ${persona.closing}`,
+            reality: 'package.json was modified without synchronizing the lockfile.',
+            remediation: drift.lockType === 'pnpm' ? 'pnpm install' : 'npm install'
         };
     }
 
-    // Default Fallback
+    // 3. Critical AST Smells
+    if (ast.smells.some((s) => s.type === 'SWALLOWED_EXCEPTION')) {
+        return {
+            standup: `${persona.prefix} we have isolated an asynchronous fault-propagation vector that is intentionally sinking exceptions surrounding ${targetId} ${targetFile}. ${persona.closing}`,
+            reality: 'You left an empty catch block that silently buries runtime errors.',
+            remediation: 'Add structured logger telemetry or rethrow caught exceptions.'
+        };
+    }
+
+    if (ast.smells.some((s) => s.type === 'ANY_ESCAPE_HATCH')) {
+        return {
+            standup: `${persona.prefix} we are deferring static contract verification at ${targetId} to facilitate polymorphic payload elasticity. ${persona.closing}`,
+            reality: 'You bypassed TypeScript type checking using wildcard `any`.',
+            remediation: 'Define explicit interfaces or use `unknown` with runtime typeguards.'
+        };
+    }
+
+    // 4. Telemetry: Low Battery or Heavy RAM
+    if (telemetry.isLowBattery) {
+        return {
+            standup: `${persona.prefix} local compute cycles are throttled to preserve execution state under hardware power-envelope constraints (${telemetry.batteryLevel}% reserve). ${persona.closing}`,
+            reality: `Your laptop battery is down to ${telemetry.batteryLevel}%.`,
+            remediation: 'Connect your laptop to power before running heavy builds.'
+        };
+    }
+
+    if (telemetry.isMemoryChoked) {
+        return {
+            standup: `${persona.prefix} computation throughput is degraded due to memory bus contention (${telemetry.memPercent}% utilization). ${persona.closing}`,
+            reality: 'System is running out of free RAM. Node/Docker workers are choking.',
+            remediation: 'docker system prune -f'
+        };
+    }
+
+    // 5. Friday Afternoon Deploy Risk
+    if (telemetry.isFridayAfternoon) {
+        return {
+            standup: `${persona.prefix} our deployment cadence is respecting the risk-mitigation protocol governing late-cycle weekend stability. ${persona.closing}`,
+            reality: 'It is Friday afternoon. Pushing to staging or production now risks weekend downtime.',
+            remediation: 'Step away from deployments. Resume on Monday morning.'
+        };
+    }
+
+    // Dynamic Generative Fallback
     return {
-        standup: `${persona.prefix} we are validating transient state-transitions against our local execution container to guarantee backward parity. ${persona.closing}`,
-        reality: "No critical faults detected. You simply haven't pushed changes recently.",
-        severity: "Low",
-        remediation: "Commit your working tree: `git commit -m 'chore: incremental updates'`"
+        standup: `${persona.prefix} we are actively ${pick(VERBS)} ${pick(ADJECTIVES)} ${pick(NOUNS)} around ${targetId} ${targetFile} to guarantee backward parity. ${persona.closing}`,
+        reality: 'No critical errors detected. You simply have uncommitted local changes.',
+        remediation: 'git commit -m "chore: incremental updates"'
     };
 }

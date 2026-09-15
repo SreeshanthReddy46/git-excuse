@@ -1,13 +1,13 @@
 import { analyzeGitForensics } from './engine/git-forensics.js';
-import { analyzeASTCodeSmells } from './engine/ast-analyzer.js';
+import { analyzeCodeSmells } from './engine/ast-analyzer.js';
 import { getSystemTelemetry } from './engine/sys-telemetry.js';
 import { detectLockfileDrift } from './engine/lockfile-drift.js';
 import { synthesizeCorporateExcuse } from './generator/corporate-speak.js';
 import { generateSlackBlockKit } from './ui/export-slack.js';
 
-export function runForensics(options = {}) {
+export function runExcuseEngine(options = {}) {
     const forensics = analyzeGitForensics();
-    const ast = analyzeASTCodeSmells();
+    const ast = analyzeCodeSmells();
     const telemetry = getSystemTelemetry();
     const drift = detectLockfileDrift();
 
@@ -29,4 +29,4 @@ export function runForensics(options = {}) {
     };
 }
 
-export { analyzeGitForensics, analyzeASTCodeSmells, getSystemTelemetry, detectLockfileDrift };
+export { analyzeGitForensics, analyzeCodeSmells, getSystemTelemetry, detectLockfileDrift };

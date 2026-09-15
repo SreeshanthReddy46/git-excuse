@@ -4,53 +4,43 @@ import { execSync } from 'node:child_process';
 
 const traverse = traverseModule.default || traverseModule;
 
-export function analyzeASTCodeSmells() {
-    let diffContent = '';
+function run(cmd) {
     try {
-        diffContent = execSync('git diff -U0 -- "*.js" "*.jsx" "*.ts" "*.tsx"', {
-            stdio: ['pipe', 'pipe', 'ignore'],
-            encoding: 'utf-8'
-        });
+        return execSync(cmd, { stdio: ['pipe', 'pipe', 'ignore'], encoding: 'utf-8' });
     } catch {
-        return { smells: [], smellCounts: {} };
+        return '';
     }
+}
 
-    const addedCodeLines = diffContent
+export function analyzeCodeSmells() {
+    const diff = run('git diff -U0 -- "*.js" "*.jsx" "*.ts" "*.tsx"');
+    if (!diff) return { smells: [], identifiers: [] };
+
+    const addedLines = diff
         .split('\n')
-        .filter(line => line.startsWith('+') && !line.startsWith('+++'))
-        .map(line => line.slice(1));
+        .filter((l) => l.startsWith('+') && !l.startsWith('+++'))
+        .map((l) => l.slice(1));
 
+    const rawChunk = addedLines.join('\n');
     const smells = [];
-    const rawChunk = addedCodeLines.join('\n');
+    const identifiers = new Set();
 
-    // Fast string regex scans for pre-parse heuristics
+    // Fast string regex heuristics
     if (/console\.(log|warn|debug|table)/.test(rawChunk)) {
-        smells.push({
-            type: 'LEAKED_CONSOLE_TELEMETRY',
-            severity: 'Low',
-            detail: 'Raw console statements left in active staging path'
-        });
+        smells.push({ type: 'CONSOLE_TELEMETRY', detail: 'Found raw console telemetry in diff' });
     }
-
     if (/\/\/\s*(TODO|FIXME|HACK|OPTIMIZE)/i.test(rawChunk)) {
-        smells.push({
-            type: 'INLINE_DEBT_ACCRUAL',
-            severity: 'Medium',
-            detail: 'TODO/FIXME comments left in diff as debt obligations'
-        });
+        smells.push({ type: 'INLINE_DEBT_MARKER', detail: 'Inline technical debt markers detected' });
     }
-
     if (/:\s*any\b/.test(rawChunk)) {
-        smells.push({
-            type: 'TYPE_SOUNDNESS_BYPASS',
-            severity: 'High',
-            detail: 'Wildcard TypeScript `any` cast detected'
-        });
+        smells.push({ type: 'ANY_ESCAPE_HATCH', detail: 'TypeScript soundness bypassed via wildcard `any`' });
     }
 
-    // Deep AST Tree Analysis
+    // Safe AST parsing with synthetic wrapper to prevent partial-line crash
+    const wrappedCode = `async function __synthetic_diff_scope__() {\n${rawChunk}\n}`;
+
     try {
-        const ast = parse(rawChunk, {
+        const ast = parse(wrappedCode, {
             sourceType: 'unambiguous',
             errorRecovery: true,
             plugins: ['typescript', 'jsx']
@@ -59,38 +49,27 @@ export function analyzeASTCodeSmells() {
         traverse(ast, {
             CatchClause(path) {
                 if (!path.node.body.body.length) {
-                    smells.push({
-                        type: 'SILENT_EXCEPTION_SINK',
-                        severity: 'Critical',
-                        detail: 'Empty catch block silently swallowing unhandled runtime faults'
-                    });
+                    smells.push({ type: 'SWALLOWED_EXCEPTION', detail: 'Empty catch block swallowing runtime errors' });
                 }
             },
             CallExpression(path) {
                 if (path.node.callee.name === 'eval') {
-                    smells.push({
-                        type: 'DYNAMIC_CODE_EXECUTION',
-                        severity: 'Critical',
-                        detail: 'Use of eval() violating execution safety boundaries'
-                    });
+                    smells.push({ type: 'DYNAMIC_CODE_EXECUTION', detail: 'Dynamic eval() execution detected' });
                 }
             },
-            DebuggerStatement() {
-                smells.push({
-                    type: 'TRAPPED_BREAKPOINT',
-                    severity: 'High',
-                    detail: 'Hardcoded debugger statement left in staged lines'
-                });
+            Identifier(path) {
+                const name = path.node.name;
+                if (name.length > 3 && !['const', 'let', 'return', 'async', 'function'].includes(name)) {
+                    identifiers.add(name);
+                }
             }
         });
     } catch {
-        // AST recovery fails gracefully on incomplete syntax fragments
+        // AST recovery fails safely on non-recoverable fragments
     }
 
-    const smellCounts = smells.reduce((acc, smell) => {
-        acc[smell.type] = (acc[smell.type] || 0) + 1;
-        return acc;
-    }, {});
-
-    return { smells, smellCounts };
+    return {
+        smells,
+        identifiers: Array.from(identifiers).slice(0, 4)
+    };
 }
